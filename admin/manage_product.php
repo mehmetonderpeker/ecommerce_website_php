@@ -6,11 +6,12 @@ $mrp='';
 $price='';
 $qty='';
 $image='';
-$short_desc='';
-$description='';
-$meta_title='';
-$meta_description='';
+$short_desc	='';
+$description	='';
+$meta_title	='';
+$meta_description	='';
 $meta_keyword='';
+$best_seller='';
 
 $msg='';
 $image_required='required';
@@ -31,13 +32,14 @@ if(isset($_GET['id']) && $_GET['id']!=''){
 		$meta_title=$row['meta_title'];
 		$meta_desc=$row['meta_desc'];
 		$meta_keyword=$row['meta_keyword'];
+		$best_seller=$row['best_seller'];
 	}else{
 		header('location:product.php');
 		die();
-	}	
+	}
 }
 
-if(isset($_POST['sumbit'])){
+if(isset($_POST['submit'])){
 	$categories_id=get_safe_value($con,$_POST['categories_id']);
 	$name=get_safe_value($con,$_POST['name']);
 	$mrp=get_safe_value($con,$_POST['mrp']);
@@ -48,6 +50,7 @@ if(isset($_POST['sumbit'])){
 	$meta_title=get_safe_value($con,$_POST['meta_title']);
 	$meta_desc=get_safe_value($con,$_POST['meta_desc']);
 	$meta_keyword=get_safe_value($con,$_POST['meta_keyword']);
+	$best_seller=get_safe_value($con,$_POST['best_seller']);
 	
 	$res=mysqli_query($con,"select * from product where name='$name'");
 	$check=mysqli_num_rows($res);
@@ -55,8 +58,8 @@ if(isset($_POST['sumbit'])){
 		if(isset($_GET['id']) && $_GET['id']!=''){
 			$getData=mysqli_fetch_assoc($res);
 			if($id==$getData['id']){
-				
-			}else{	
+			
+			}else{
 				$msg="Product already exist";
 			}
 		}else{
@@ -64,30 +67,38 @@ if(isset($_POST['sumbit'])){
 		}
 	}
 	
-	if($_FILES['image']['type']!='image/png' && $_FILES['image']['type']!='image/jpg' && $_FILES['image']['type']!='image/jpeg'){
-		$msg="Please choose just jpg,png or jpeg image format";
-	}	
+	
+	if($_GET['id']==0){
+		if($_FILES['image']['type']!='image/png' && $_FILES['image']['type']!='image/jpg' && $_FILES['image']['type']!='image/jpeg'){
+			$msg="Please select only png,jpg and jpeg image formate";
+		}
+	}else{
+		if($_FILES['image']['type']!=''){
+				if($_FILES['image']['type']!='image/png' && $_FILES['image']['type']!='image/jpg' && $_FILES['image']['type']!='image/jpeg'){
+				$msg="Please select only png,jpg and jpeg image formate";
+			}
+		}
+	}
 	
 	if($msg==''){
 		if(isset($_GET['id']) && $_GET['id']!=''){
 			if($_FILES['image']['name']!=''){
 				$image=rand(111111111,999999999).'_'.$_FILES['image']['name'];
 				move_uploaded_file($_FILES['image']['tmp_name'],PRODUCT_IMAGE_SERVER_PATH.$image);
-				$update_sql="update product set categories_id='$categories_id',name='$name',mrp='$mrp',price='$price',qty='$qty',short_desc='$short_desc',meta_title='$meta_title',meta_desc='$meta_desc',meta_keyword='$meta_keyword',image='$image' where id='$id'";
+				$update_sql="update product set categories_id='$categories_id',name='$name',mrp='$mrp',price='$price',qty='$qty',short_desc='$short_desc',description='$description',meta_title='$meta_title',meta_desc='$meta_desc',meta_keyword='$meta_keyword',image='$image',best_seller='$best_seller' where id='$id'";
 			}else{
-				$update_sql="update product set categories_id='$categories_id',name='$name',mrp='$mrp',price='$price',qty='$qty',short_desc='$short_desc',meta_title='$meta_title',meta_desc='$meta_desc',meta_keyword='$meta_keyword',image='$image' where id='$id'";
+				$update_sql="update product set categories_id='$categories_id',name='$name',mrp='$mrp',price='$price',qty='$qty',short_desc='$short_desc',description='$description',meta_title='$meta_title',meta_desc='$meta_desc',meta_keyword='$meta_keyword',best_seller='$best_seller' where id='$id'";
 			}
 			mysqli_query($con,$update_sql);
-		}else{	
+		}else{
 			$image=rand(111111111,999999999).'_'.$_FILES['image']['name'];
 			move_uploaded_file($_FILES['image']['tmp_name'],PRODUCT_IMAGE_SERVER_PATH.$image);
-			mysqli_query($con,"insert into product(categories_id,name,mrp,price,qty,short_desc,description,meta_title,meta_desc,meta_keyword,status,image) values('$categories_id','$name','$mrp','$price','$qty','$short_desc','$description','$meta_title','$meta_desc','$meta_keyword',1,'$image')");
+			mysqli_query($con,"insert into product(categories_id,name,mrp,price,qty,short_desc,description,meta_title,meta_desc,meta_keyword,status,image,best_seller) values('$categories_id','$name','$mrp','$price','$qty','$short_desc','$description','$meta_title','$meta_desc','$meta_keyword',1,'$image','$best_seller')");
 		}
 		header('location:product.php');
 		die();
-	}	
+	}
 }
-
 ?>
 <div class="content pb-0">
             <div class="animated fadeIn">
@@ -98,8 +109,8 @@ if(isset($_POST['sumbit'])){
                         <form method="post" enctype="multipart/form-data">
 							<div class="card-body card-block">
 							   <div class="form-group">
-								   <label for="categories" class=" form-control-label">Categories</label>
-								   <select class="form-control" name="categories_id">
+									<label for="categories" class=" form-control-label">Categories</label>
+									<select class="form-control" name="categories_id">
 										<option>Select Category</option>
 										<?php
 										$res=mysqli_query($con,"select id,categories from categories order by categories asc");
@@ -107,68 +118,89 @@ if(isset($_POST['sumbit'])){
 											if($row['id']==$categories_id){
 												echo "<option selected value=".$row['id'].">".$row['categories']."</option>";
 											}else{
-												echo "<option value=".$row['id'].">".$row['categories']."</option>";	
-											}	
-										}	
+												echo "<option value=".$row['id'].">".$row['categories']."</option>";
+											}
+											
+										}
 										?>
-								   </select>
-							   </div>
-							    <div class="form-group">
-								   <label for="categories" class=" form-control-label">Product Name</label>
-								   <input type="text" name="name" placeholder="Enter the product name" class="form-control" required value="<?php echo $name?>">
-							   </div>
-							   
-							   <div class="form-group">
-								   <label for="categories" class=" form-control-label">MRP</label>
-								   <input type="text" name="mrp" placeholder="Enter the mrp" class="form-control" required value="<?php echo $mrp?>">
-							   </div>
-							   
-							   <div class="form-group">
-								   <label for="categories" class=" form-control-label">Price</label>
-								   <input type="text" name="price" placeholder="Enter the price" class="form-control" required value="<?php echo $price?>">
-							   </div>
-							   
-							   <div class="form-group">
-								   <label for="categories" class=" form-control-label">Qty</label>
-								   <input type="text" name="qty" placeholder="Enter the qty" class="form-control" required value="<?php echo $qty?>">
-							   </div>
-							   
-							   <div class="form-group">
-								   <label for="categories" class=" form-control-label">Image</label>
-								   <input type="file" name="image" class="form-control" <?php echo $image_required?>>
-							   </div>
-							   
-							   <div class="form-group">
-								   <label for="categories" class=" form-control-label">Short Description</label>
-								   <textarea name="short_desc" placeholder="Enter the product short description" class="form-control" required><?php echo $short_desc?></textarea>
-							   </div>
-							   
-							   <div class="form-group">
-								   <label for="categories" class=" form-control-label">Description</label>
-								   <textarea name="description" placeholder="Enter the product description" class="form-control" required><?php echo $description?></textarea>
-							   </div>
-							   
-							   <div class="form-group">
-								   <label for="categories" class=" form-control-label">Meta Title</label>
-								   <textarea name="meta_title" placeholder="Enter the product meta title" class="form-control"><?php echo $meta_title?></textarea>
-							   </div>
-							   
-							   <div class="form-group">
-								   <label for="categories" class=" form-control-label">Meta Description</label>
-								   <textarea name="meta_desc" placeholder="Enter the product meta description" class="form-control"><?php echo $meta_description?></textarea>
-							   </div>
-							   
-							   <div class="form-group">
-								   <label for="categories" class=" form-control-label">Meta Keyword</label>
-								   <textarea name="meta_keyword" placeholder="Enter the product meta keyword" class="form-control"><?php echo $meta_keyword?></textarea>
-							   </div>
-							   
-							   <button id="payment-button" name="sumbit" type="submit" class="btn btn-lg btn-info btn-block">
+									</select>
+								</div>
+								<div class="form-group">
+									<label for="categories" class=" form-control-label">Product Name</label>
+									<input type="text" name="name" placeholder="Enter product name" class="form-control" required value="<?php echo $name?>">
+								</div>
+								
+								<div class="form-group">
+									<label for="categories" class=" form-control-label">Best Seller</label>
+									<select class="form-control" name="best_seller" required>
+									<option value=''>Select</option>
+									<?php
+									if($best_seller==1){
+										 echo '<option value="1" selected>Yes</option>
+												<option value="0">No</option>';
+									}elseif($best_seller==0){
+										echo '<option value="1">Yes</option>
+											<option value="0" selected>No</option>';
+									}else{
+										echo '<option value="1">Yes</option>
+											<option value="0">No</option>';
+									}									
+									?>
+									</select>
+								</div>
+								
+								<div class="form-group">
+									<label for="categories" class=" form-control-label">MRP</label>
+									<input type="text" name="mrp" placeholder="Enter product mrp" class="form-control" required value="<?php echo $mrp?>">
+								</div>
+								
+								<div class="form-group">
+									<label for="categories" class=" form-control-label">Price</label>
+									<input type="text" name="price" placeholder="Enter product price" class="form-control" required value="<?php echo $price?>">
+								</div>
+								
+								<div class="form-group">
+									<label for="categories" class=" form-control-label">Qty</label>
+									<input type="text" name="qty" placeholder="Enter qty" class="form-control" required value="<?php echo $qty?>">
+								</div>
+								
+								<div class="form-group">
+									<label for="categories" class=" form-control-label">Image</label>
+									<input type="file" name="image" class="form-control" <?php echo  $image_required?>>
+								</div>
+								
+								<div class="form-group">
+									<label for="categories" class=" form-control-label">Short Description</label>
+									<textarea name="short_desc" placeholder="Enter product short description" class="form-control" required><?php echo $short_desc?></textarea>
+								</div>
+								
+								<div class="form-group">
+									<label for="categories" class=" form-control-label">Description</label>
+									<textarea name="description" placeholder="Enter product description" class="form-control" required><?php echo $description?></textarea>
+								</div>
+								
+								<div class="form-group">
+									<label for="categories" class=" form-control-label">Meta Title</label>
+									<textarea name="meta_title" placeholder="Enter product meta title" class="form-control"><?php echo $meta_title?></textarea>
+								</div>
+								
+								<div class="form-group">
+									<label for="categories" class=" form-control-label">Meta Description</label>
+									<textarea name="meta_desc" placeholder="Enter product meta description" class="form-control"><?php echo $meta_desc?></textarea>
+								</div>
+								
+								<div class="form-group">
+									<label for="categories" class=" form-control-label">Meta Keyword</label>
+									<textarea name="meta_keyword" placeholder="Enter product meta keyword" class="form-control"><?php echo $meta_keyword?></textarea>
+								</div>
+								
+								
+							   <button id="payment-button" name="submit" type="submit" class="btn btn-lg btn-info btn-block">
 							   <span id="payment-button-amount">Submit</span>
 							   </button>
 							   <div class="field_error"><?php echo $msg?></div>
-							</div>   
-                        </form>
+							</div>
+						</form>
                      </div>
                   </div>
                </div>
@@ -177,4 +209,4 @@ if(isset($_POST['sumbit'])){
          
 <?php
 require('footer.inc.php');
-?> 
+?>
